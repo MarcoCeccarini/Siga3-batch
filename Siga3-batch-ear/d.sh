@@ -1,0 +1,1 @@
+mvn liberty:dev -DskipTests=true -X -e

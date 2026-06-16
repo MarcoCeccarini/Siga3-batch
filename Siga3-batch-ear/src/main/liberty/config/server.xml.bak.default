@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server description="Siga3-batch Liberty Server">
+
+    <featureManager>
+        <feature>jakartaee-10.0</feature>
+    </featureManager>
+
+    <httpEndpoint id="defaultHttpEndpoint"
+                  host="*"
+                  httpPort="9080"
+                  httpsPort="9443"/>
+
+    <enterpriseApplication id="Siga3-batch"
+                           location="Siga3-batch-ear-1.0.0-SNAPSHOT.ear"
+                           name="Siga3-batch-ear"/>
+
+    <logging consoleLogLevel="INFO"
+             traceSpecification="*=info"/>
+
+</server>
