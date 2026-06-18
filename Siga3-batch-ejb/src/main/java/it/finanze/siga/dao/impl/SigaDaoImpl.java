@@ -3397,12 +3397,7 @@ public class SigaDaoImpl {
 		query.executeUpdate();
 	}
 
-	public long getIdRichFromSequenceIdRichiesta()  {
-		String sql = "SELECT ID_RICHIESTA.nextval FROM dual";
-		Query query = entityManager.createNativeQuery(sql);
-		Object result = query.getSingleResult();
-		return result != null ? ((Number) result).longValue() : 1L;
-	}
+	
 
 	public Long getSequenceFromRichiesteBatch()  {
 		String sql = "SELECT SEQUENCE_RICH_BATCH.nextval FROM dual";
@@ -3947,25 +3942,7 @@ public class SigaDaoImpl {
 		}
 	}
 
-	public int verificaDisallineamentoCf(String cf)  {
-		try {
-			String sql = "SELECT "
-					+ "			COUNT(*)"
-					+ "		FROM "
-					+ "			UTENTI "
-					+ "		WHERE "
-					+ "			CODICE_FISCALE = ?1 "
-					+ "			AND CDR_DISALL_CAU_SIGA = 'SI'"
-					+ "			AND DATA_FINE_VAL IS NULL";
-			Query query = entityManager.createNativeQuery(sql);
-			query.setParameter(1, cf);
-			Object result = query.getSingleResult();
-			return ((Number) result).intValue();
-		} catch (Exception e) {
-			throw new RuntimeException("Error verifying disallineamento: " + e.getMessage(), e);
-		}
-	}
-
+	
 	@TransactionAttribute(TransactionAttributeType.REQUIRED)
 	public void inserimentoProfiloRichiesta(ProfiloRichiestaBean bean)  {
 

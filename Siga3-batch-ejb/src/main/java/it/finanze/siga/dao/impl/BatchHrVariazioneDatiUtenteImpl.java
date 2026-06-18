@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
+import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
@@ -23,6 +24,8 @@ import javax.naming.directory.DirContext;
 import org.apache.log4j.Logger;
 
 import com.ibatis.common.resources.Resources;
+
+import it.finanze.siga.util.Logged;
 import com.ibatis.sqlmap.client.SqlMapClient;
 import com.ibatis.sqlmap.client.SqlMapClientBuilder;
 
@@ -53,6 +56,7 @@ import it.finanze.siga.utility.properties.PropertiesReader;
 import it.sogei.cau.ws.ServiceCauAmmLocale;
 import it.sogei.eaf.util.CheckException;
 
+@Logged
 @Stateless
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 public class BatchHrVariazioneDatiUtenteImpl  extends BatchHrVariazioneDatiUtenteDao implements IBatchHrVariazioneDatiUtenteNew{ // BatchHrVariazioneDatiUtenteDao implements IBatchHrVariazioneDatiUtenteNew{{ // BatchHrVariazioneDatiUtenteNewDaoImpl implements IBatchHrVariazioneDatiUtenteNew{
@@ -60,6 +64,8 @@ public class BatchHrVariazioneDatiUtenteImpl  extends BatchHrVariazioneDatiUtent
 	@Inject MetodiComuni metodiComuni;
 	@Inject MailCommonUtil mailCommonUtil;
 	@Inject DelegheBusiness delegheBusiness;
+	@EJB(beanName = "BatchHrVariazioneDatiUtenteDao")
+	private BatchHrVariazioneDatiUtenteDao dao;
 	static Logger fileLog = Logger.getLogger(BatchHrVariazioneDatiUtenteImpl.class);
 	public static String DIR_PROPERTIES = "/prod/installedApps/SIGA";
 	public static String FILE_PROPERTIES = "ini.properties";
@@ -212,7 +218,7 @@ fileLog.error(e.getMessage(),e);
 			Iterator itStruttutaIter = struttutaIterList.iterator();
 			//per il cf che stiamo trattando imposto la data fina validite' sulla tabella struttura per iter
 			fileLog.debug("AGGIORNO LA DATA FINE VALIDITA SULLA TABELLA STRUTTURA PER ITER");
-			updateStrutturaIter(input);
+			dao.updateStrutturaIter(input);
 
 			while (itStruttutaIter.hasNext()){
 
@@ -228,7 +234,7 @@ fileLog.error(e.getMessage(),e);
 				}
 
 				fileLog.debug(" INSERT STRUTTURA ITER" + strutturaIter.getIdentificativoIter() );
-				insertStrutturaIter(strutturaIter);
+				dao.insertStrutturaIter(strutturaIter);
 			}
 
 
@@ -481,7 +487,7 @@ fileLog.error(e.getMessage(),e);
 			Utenti utentiForOperatore = null;
 			AssociazOperRichiAutor richiedenteEAutorizzatore = (AssociazOperRichiAutor)selectCFRichiedenteEAutorizzatoreByCFOperatore(input);
 
-			closeAssociazOperRichiAutorByCFOperatore(input);
+			dao.closeAssociazOperRichiAutorByCFOperatore(input);
 
 			cfGenerico = richiedenteEAutorizzatore.getCfRichiedente();
 			utentiForOperatore = (Utenti)selectUtenteByCF(cfGenerico);
@@ -532,7 +538,7 @@ fileLog.error(e.getMessage(),e);
 
 				}
 
-				updateUtentiForVerificaOperatore(utentiForOperatore);
+				dao.updateUtentiForVerificaOperatore(utentiForOperatore);
 
 			}
 		}else if (numeroOperatori>1)
@@ -557,8 +563,8 @@ fileLog.error(e.getMessage(),e);
 		String testoEmail = "Notifica Chiusura richiesta per CF_Utente: "+input.get("userId");
 		fileLog.debug("          testoEmail: "+testoEmail);
 
-		annullamentoRichieste(input);
-		annullamentoRichieste2(input);
+		dao.annullamentoRichieste(input);
+		dao.annullamentoRichieste2(input);
 
 		Iterator it5 = selectCFPresaINCaricoFromRegistroRichieste(input).iterator();
 
@@ -601,7 +607,7 @@ fileLog.error(e.getMessage(),e);
 
 				if (!getRuoliGestoriOperatori((String)input.get("userId")).isEmpty()){
 
-					insertAuditOperazioni(input);
+					dao.insertAuditOperazioni(input);
 					fileLog.debug(" GESTORE OPERATORI - INSERITO: "+(String)input.get("userId"));
 				}
 				int idAuditFine = selectMaxIDAudit();
@@ -612,7 +618,7 @@ fileLog.error(e.getMessage(),e);
 
 				fileLog.debug("GESTORE OPERATORI - AGGIORNAMENTO objectIdAuditFine: "+objectIdAuditFine);
 				input.put("idAuditFine", String.valueOf(objectIdAuditFine));
-				updateGestoreOperatore(input);
+				dao.updateGestoreOperatore(input);
 
 			}
 		} catch (Exception e) {
@@ -624,7 +630,6 @@ fileLog.error(e.getMessage(),e);
 	}
 
 	@Override
-	@TransactionAttribute(TransactionAttributeType.REQUIRED)
 	public void startBatch(String verifica ) throws Exception, CheckException {
  
 		Properties prop = new Properties();
@@ -663,7 +668,7 @@ fileLog.error(e.getMessage(),e);
 			
 			// TASK 2.9 2023 solo se verifica completa: -->
 			if(verificaAll) {
-				startBatchVariazioneDatiUte();
+				dao.startBatchVariazioneDatiUte();
 			}
 			// 2.9 2023 <--
 			
@@ -814,7 +819,7 @@ fileLog.error(e.getMessage(),e);
 								//inserisco il nuovo utente sulla tabella utenti di siga
 								//sqlMapClientSiga.insert("SigaVariazioneDatiUtenti.insertUtentiSiga", cauUserIdOrgName);
 								fileLog.debug("INSERIMENTO SULLA TABELLA UTENTI CF: " + userId);
-								insertUtentiSiga(input);
+								dao.insertUtentiSiga(input);
 	
 								//inserisco il nuovo utente sulla tabella storico cdr utenti di siga
 								//sqlMapClientSiga.insert("SigaVariazioneDatiUtenti.insertStoricoCdRUtenti", cauUserIdOrgName);
@@ -824,7 +829,7 @@ fileLog.error(e.getMessage(),e);
 								input.put("oldCdR", null);
 	
 								fileLog.debug("INSERIMENTO SULLA TABELLA STORICO UTENTI AGGIORANTI HR CF: " + userId + " CDR " + orgName);
-								insertUtentiAggiornatiHR_Var(input);
+								dao.insertUtentiAggiornatiHR_Var(input);
 								numeroUtentiPresentiSoloSuCau ++;
 	
 							}   
@@ -835,12 +840,12 @@ fileLog.error(e.getMessage(),e);
 								inputRipristino.put("newCdr", orgName);
 	
 								fileLog.debug("RIPRISTINO UTENTE CF: " + userId + " CDR " + orgName);
-								updateUtentiPerRipristino(inputRipristino);
+								dao.updateUtentiPerRipristino(inputRipristino);
 								input.put("tipoEvento", "I");
 								fileLog.debug("INSERIMENTO SULLA TABELLA STORICO CDR UTENTI CF: " + userId + " CDR " + orgName);
-								insertStoricoCdRUtenti(input);
+								dao.insertStoricoCdRUtenti(input);
 								fileLog.debug("INSERIMENTO SULLA TABELLA STORICO UTENTI AGGIORANTI HR CF: " + userId + " CDR " + orgName);
-								insertUtentiAggiornatiHR_Var(input);
+								dao.insertUtentiAggiornatiHR_Var(input);
 	
 							}
 							else if (numeroUtentiSiga.intValue() != 0 && countUtenteByCFClosed(userId)==0)
@@ -906,11 +911,11 @@ fileLog.error(e.getMessage(),e);
 									// il cdr di ctsa e quello della tabella utenti sono diversi
 									// imposto la data fine validite' = null per il record con il vecchio cdr 
 									fileLog.debug("AGGIORNAMENTO STORICO CDR UTENTI imposto la data fine validite' = null per il record con il vecchio cdr "+utentiSiga.getCodiceCdR() );
-									updateStoricoCdrUtenti(utentiSiga);
+									dao.updateStoricoCdrUtenti(utentiSiga);
 	
 									fileLog.debug("INSERMIMENTO STORICO CDR UTENTI sostituisco il codice cdr di siga con quello di ctsa " + orgName);
 									// il cdr di ctsa e siga sono diversi: sostituisco il codice cdr di siga con quello di ctsa
-									insertStoricoCdRUtenti(input);
+									dao.insertStoricoCdRUtenti(input);
 	
 	
 									input.put("oldCdR", codiceCdRSiga);
@@ -923,7 +928,7 @@ fileLog.error(e.getMessage(),e);
 									input.put("cdr",orgName);
 									input.put("tipoEvento", "M");
 									fileLog.debug("inserito utente sulla tabella utenti aggiornati HR con tipo evento = M " );
-									insertUtentiAggiornatiHR_Var(input);
+									dao.insertUtentiAggiornatiHR_Var(input);
 									numeroUtentiPresentiSuCauESigaConCDRDiverso ++;
 	
 									// riduzione codice: inserire nuovamente per la versione integrale
@@ -969,13 +974,13 @@ fileLog.error(e.getMessage(),e);
 								// MODIFICA DEL 11-03-2005 ( eseguo update utenti alla fine )
 								if (nome||cognome||email||!orgName.equalsIgnoreCase(codiceCdRSiga)){
 									fileLog.debug("AGGIORNAMENTO TABELLA UTENTE PER VARIAZIONE COGNOME, NOME, EMAIL");
-									updateUtenti(utentiSiga);
+									dao.updateUtenti(utentiSiga);
 	
 								}
 	
 								OperatoreFinder operatoreFinder = new OperatoreFinder(userId);
 								operatoreFinder.setFlagCdrDisallCauSiga("NO");
-								updateFlagUtenteCdrDisallienato(operatoreFinder);
+								dao.updateFlagUtenteCdrDisallienato(operatoreFinder);
 							}
 							numeroCFCauElaborati ++;
 							
@@ -1025,8 +1030,15 @@ fileLog.error(e.getMessage(),e);
 	
 					
 					// verifico se ci sono utenti siga che non sono pie' presenti su CAU
-					Iterator itSiga = selectAllCFUtenti().iterator();
-					
+					// TODO MCE BYPASS
+					final int PAGE_SIZE_SIGA = 3;
+					int pageOffsetSiga = 0;
+					boolean hasMorePagesSiga = true;
+					while (hasMorePagesSiga) {
+					List<Utenti> pageSiga = selectAllCFUtenti(pageOffsetSiga, PAGE_SIZE_SIGA);
+					hasMorePagesSiga = false ; // pageSiga.size() == PAGE_SIZE_SIGA;
+					Iterator itSiga = pageSiga.iterator();
+
 					while (itSiga.hasNext()){
 	
 						try{	
@@ -1054,7 +1066,7 @@ fileLog.error(e.getMessage(),e);
 								// Aggiunto filtro sui cf da controllare presi da file di properties
 							if(!verificaAll|| (mod!=null && mod.trim().equals("3")) || (mod!=null && !mod.trim().equals("3") && filtriCf.contains(codiceFiscaleUtenti) )){
 								// TODO MCE MOCK
-								Integer numeroUtentiCau = (true) ? 0 : ProvisioningClient.countUtenteCTSAByCF(codiceFiscaleUtenti);
+								Integer numeroUtentiCau = (true) ? 1 : ProvisioningClient.countUtenteCTSAByCF(codiceFiscaleUtenti);
 	
 								if(numeroUtentiCau.intValue()==0){
 									fileLog.debug("UTENTE PRESENTE SU SIGA MA NON PIU' PRESENTE SU CAU");
@@ -1062,7 +1074,7 @@ fileLog.error(e.getMessage(),e);
 									//MODIFICA DEL 11-03-2015 ( eseguo update alla fine )
 									//sqlMapClientSiga.update("SigaVariazioneDatiUtenti.updateStoricoCdrUtentiPerCessazione", codiceFiscaleUtenti);
 									fileLog.debug("AGGIORNAMENTO UTENTI PER CESSAZIONE CF: "+codiceFiscaleUtenti);
-									updateUtentiPerCessazione(codiceFiscaleUtenti);
+									dao.updateUtentiPerCessazione(codiceFiscaleUtenti);
 									input.put("userId", codiceFiscaleUtenti);
 									input.put("tipoEvento", "C");
 									//input.put("oldCdR", null);
@@ -1070,7 +1082,7 @@ fileLog.error(e.getMessage(),e);
 									input.put("orgName", null);
 									motivazione = "CDTE";
 									fileLog.debug("INSERIMENTO IN TABELLA UTENTI AGGIORANTI HR PER CESSAZIONE CF: "+codiceFiscaleUtenti);
-									insertUtentiAggiornatiHR_Var(input);
+									dao.insertUtentiAggiornatiHR_Var(input);
 	
 									flagRichiedente = utentiSiga.getRichiedente();
 									fileLog.debug("flagRichiedente: "+flagRichiedente);
@@ -1100,8 +1112,8 @@ fileLog.error(e.getMessage(),e);
 	
 									// MODICA DEL 11-03-2015 ( eseguo update alla fine )
 									fileLog.debug("AGGIORNAMENTO STORICO CDR UTENTI PER CESSAZIONE CF: "+codiceFiscaleUtenti);
-									updateStoricoCdrUtentiPerCessazione(utentiSiga);
-									aggiornaFlagUtente(utentiSiga);
+									dao.updateStoricoCdrUtentiPerCessazione(utentiSiga);
+									dao.aggiornaFlagUtente(utentiSiga);
 	
 									motivazionePerDelegato = "CDTO";
 									verificaDelegato(input, motivazionePerDelegato);
@@ -1115,12 +1127,12 @@ fileLog.error(e.getMessage(),e);
 										input.put("testoAudit", testoAudit);
 										String tabellaAggiornata = "gestori_operatori";
 										input.put("tabellaAggiornata", tabellaAggiornata);
-										insertAuditOperazioni(input);
+										dao.insertAuditOperazioni(input);
 										int idAuditFine = (Integer)selectMaxIDAudit();
 										Integer objectIdAuditFine = idAuditFine;
 										input.put("idAuditFine", String.valueOf(objectIdAuditFine));
 										fileLog.debug("AGGIORNAMENTO GESTORE OPERATORE PER CESSAZIONE CF: "+codiceFiscaleUtenti);
-										updateGestoreOperatore(input);
+										dao.updateGestoreOperatore(input);
 									}
 									//andare a visibilite' e profili posseduti
 									//template(input, sqlMapClientSiga);
@@ -1146,9 +1158,11 @@ fileLog.error(e.getMessage(),e);
 						}
 	
 						numeroCFSigaTotali ++;
-					}
-					
-					
+					} // inner while
+					pageOffsetSiga += PAGE_SIZE_SIGA;
+					} // pages while
+
+
 					fileLog.debug("FINE ELABORAZIONE: numero di CFSiga totali ="+numeroCFSigaTotali);
 					fileLog.debug(" FINE ELABORAZIONE: numero di CFSiga lavorati ="+numeroCFSigaElaborati);
 					fileLog.debug("   FINE ELABORAZIONE: numero di CFSiga non pie' presenti su cau: "+numeroUtentiPresentiSoloSuSiga);
@@ -1160,7 +1174,7 @@ fileLog.error(e.getMessage(),e);
 				}// --> 2.9 2023 <--
 				
 				dctx.close();
-				endBatchVariazioneDatiUte();
+				dao.endBatchVariazioneDatiUte();
 
 			} catch (SQLException e) {
 				// TODO Blocco catch generato automaticamente

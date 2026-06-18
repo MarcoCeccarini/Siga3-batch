@@ -72,7 +72,7 @@ import jakarta.ejb.TransactionAttributeType;
 import jakarta.mail.util.ByteArrayDataSource;
 @Stateless
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-public class BatchRichiesteCaricamentiMassivi extends BatchRichiesteCaricamentiMassiviNewDaoImpl implements IBatchRichiesteCaricamentiMassiviNew {
+public class BatchRichiesteCaricamentiMassivi extends BatchRichiesteCaricamentiMassiviDao implements IBatchRichiesteCaricamentiMassiviNew {
 
 	static Logger fileLog = Logger.getLogger(BatchRichiesteCaricamentiMassivi.class);
 	static final String COD_EVENTO_CAR_MASS  = "CarMass";

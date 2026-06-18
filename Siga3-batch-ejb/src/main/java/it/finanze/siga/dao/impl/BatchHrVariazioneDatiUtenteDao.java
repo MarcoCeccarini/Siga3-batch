@@ -25,15 +25,14 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import lombok.extern.slf4j.Slf4j;
 
-import org.apache.log4j.Logger;
+import it.finanze.siga.util.Logged;
 
+@Logged
 @Stateless
 @Slf4j
 @Named("BatchHrVariazioneDatiUtenteDao")
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 public class BatchHrVariazioneDatiUtenteDao extends SigaDaoImpl{
-
-    private static final Logger log = Logger.getLogger(BatchHrVariazioneDatiUtenteDao.class);
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -165,6 +164,33 @@ public class BatchHrVariazioneDatiUtenteDao extends SigaDaoImpl{
                 "SELECT CODICE_FISCALE, CODICE_CDR, RICHIEDENTE, AUTORIZZATORE_I_LIV, AUTORIZZATORE_II_LIV " +
                 "FROM UTENTI WHERE (DATA_FINE_VAL IS NULL OR DATA_FINE_VAL > SYSDATE)";
             Query q = entityManager.createNativeQuery(sql);
+            List<Object[]> rows = q.getResultList();
+            for (Object[] row : rows) {
+                Utenti utenti = new Utenti();
+                utenti.setCodiceFiscale(row[0] != null ? row[0].toString() : null);
+                utenti.setCodiceCdR(row[1] != null ? row[1].toString() : null);
+                utenti.setRichiedente(row[2] != null ? row[2].toString() : null);
+                utenti.setAutorizzatoreIliv(row[3] != null ? row[3].toString() : null);
+                utenti.setAutorizzatoreIIliv(row[4] != null ? row[4].toString() : null);
+                lista.add(utenti);
+            }
+        } catch (Exception e) {
+            log.error("Errore nel metodo selectAllCFUtenti", e);
+            throw new RuntimeException(e);
+        }
+        return lista;
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Utenti> selectAllCFUtenti(int offset, int pageSize) {
+        List<Utenti> lista = new ArrayList<Utenti>();
+        try {
+            String sql =
+                "SELECT CODICE_FISCALE, CODICE_CDR, RICHIEDENTE, AUTORIZZATORE_I_LIV, AUTORIZZATORE_II_LIV " +
+                "FROM UTENTI WHERE (DATA_FINE_VAL IS NULL OR DATA_FINE_VAL > SYSDATE)";
+            Query q = entityManager.createNativeQuery(sql);
+            q.setFirstResult(offset);
+            q.setMaxResults(pageSize);
             List<Object[]> rows = q.getResultList();
             for (Object[] row : rows) {
                 Utenti utenti = new Utenti();
